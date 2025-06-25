@@ -32,99 +32,94 @@ namespace CodeLuau
 			var error = ValidateData();
 			if (error != null) return new RegisterResponse(error);
 
-			bool SpeakerAppearsQualified = AppearsExceptional();
+			bool SpeakerAppearsQualified = AppearsExceptional() || !HaveObviousRedFlags();
 
 			if (!SpeakerAppearsQualified)
 			{
+				return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
 
-				//need to get just the domain from the email
-				string emailDomain = Email.Split('@').Last();
-
-				var domains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
-				if (!domains.Contains(emailDomain) && (!(Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9)))
-				{
-					SpeakerAppearsQualified = true;
-				}
 			}
-
-			if (SpeakerAppearsQualified)
+			bool Approved = false;
+			if (Sessions.Count() != 0)
 			{
-				bool Approved = false;
-				if (Sessions.Count() != 0)
+				foreach (var session in Sessions)
 				{
-					foreach (var session in Sessions)
+					var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
+					foreach (var tech in ot)
 					{
-						var ot = new List<string>() { "Cobol", "Punch Cards", "Commodore", "VBScript" };
-						foreach (var tech in ot)
+						if (session.Title.Contains(tech) || session.Description.Contains(tech))
 						{
-							if (session.Title.Contains(tech) || session.Description.Contains(tech))
-							{
-								session.Approved = false;
-								break;
-							}
-							else
-							{
-								session.Approved = true;
-								Approved = true;
-							}
+							session.Approved = false;
+							break;
+						}
+						else
+						{
+							session.Approved = true;
+							Approved = true;
 						}
 					}
-				}
-				else
-				{
-					return new RegisterResponse(RegisterError.NoSessionsProvided);
-				}
-
-				if (Approved)
-				{
-					//if we got this far, the speaker is approved
-					//let's go ahead and register him/her now.
-					//First, let's calculate the registration fee. 
-					//More experienced speakers pay a lower fee.
-					if (YearsExperience <= 1)
-					{
-						RegistrationFee = 500;
-					}
-					else if (YearsExperience >= 2 && YearsExperience <= 3)
-					{
-						RegistrationFee = 250;
-					}
-					else if (YearsExperience >= 4 && YearsExperience <= 5)
-					{
-						RegistrationFee = 100;
-					}
-					else if (YearsExperience >= 6 && YearsExperience <= 9)
-					{
-						RegistrationFee = 50;
-					}
-					else
-					{
-						RegistrationFee = 0;
-					}
-
-
-					//Now, save the speaker and sessions to the db.
-					try
-					{
-						speakerId = repository.SaveSpeaker(this);
-					}
-					catch (Exception e)
-					{
-						//in case the db call fails 
-					}
-				}
-				else
-				{
-					return new RegisterResponse(RegisterError.NoSessionsApproved);
 				}
 			}
 			else
 			{
-				return new RegisterResponse(RegisterError.SpeakerDoesNotMeetStandards);
+				return new RegisterResponse(RegisterError.NoSessionsProvided);
 			}
 
+			if (Approved)
+			{
+				//if we got this far, the speaker is approved
+				//let's go ahead and register him/her now.
+				//First, let's calculate the registration fee. 
+				//More experienced speakers pay a lower fee.
+				if (YearsExperience <= 1)
+				{
+					RegistrationFee = 500;
+				}
+				else if (YearsExperience >= 2 && YearsExperience <= 3)
+				{
+					RegistrationFee = 250;
+				}
+				else if (YearsExperience >= 4 && YearsExperience <= 5)
+				{
+					RegistrationFee = 100;
+				}
+				else if (YearsExperience >= 6 && YearsExperience <= 9)
+				{
+					RegistrationFee = 50;
+				}
+				else
+				{
+					RegistrationFee = 0;
+				}
+
+
+				//Now, save the speaker and sessions to the db.
+				try
+				{
+					speakerId = repository.SaveSpeaker(this);
+				}
+				catch (Exception e)
+				{
+					//in case the db call fails 
+				}
+			}
+			else
+			{
+				return new RegisterResponse(RegisterError.NoSessionsApproved);
+			}
 			//if we got this far, the speaker is registered.
 			return new RegisterResponse((int)speakerId);
+		}
+
+		private bool HaveObviousRedFlags()
+		{
+			//need to get just the domain from the email
+			string emailDomain = Email.Split('@').Last();
+
+			var ancientEmailDomains = new List<string>() { "aol.com", "prodigy.com", "compuserve.com" };
+			if (ancientEmailDomains.Contains(emailDomain)) return true;
+			if (Browser.Name == WebBrowser.BrowserName.InternetExplorer && Browser.MajorVersion < 9) return true;
+			return false;
 		}
 
 		private bool AppearsExceptional()
