@@ -12,7 +12,7 @@ namespace CodeLuau
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
 		public string Email { get; set; }
-		public int? Exp { get; set; }
+		public int? YearsExperience { get; set; }
 		public bool HasBlog { get; set; }
 		public string BlogURL { get; set; }
 		public WebBrowser Browser { get; set; }
@@ -32,10 +32,9 @@ namespace CodeLuau
 			var error = ValidateData();
 			if (error != null) return new RegisterResponse(error);
 
-			//put list of employers in array
-			var emps = new List<string>() { "Pluralsight", "Microsoft", "Google" };
+			var preferredEmployers = new List<string>() { "Pluralsight", "Microsoft", "Google" };
 
-			bool good = Exp > 10 || HasBlog || Certifications.Count() > 3 || emps.Contains(Employer);
+			bool good = YearsExperience > 10 || HasBlog || Certifications.Count() > 3 || preferredEmployers.Contains(Employer);
 
 			if (!good)
 			{
@@ -84,19 +83,19 @@ namespace CodeLuau
 					//let's go ahead and register him/her now.
 					//First, let's calculate the registration fee. 
 					//More experienced speakers pay a lower fee.
-					if (Exp <= 1)
+					if (YearsExperience <= 1)
 					{
 						RegistrationFee = 500;
 					}
-					else if (Exp >= 2 && Exp <= 3)
+					else if (YearsExperience >= 2 && YearsExperience <= 3)
 					{
 						RegistrationFee = 250;
 					}
-					else if (Exp >= 4 && Exp <= 5)
+					else if (YearsExperience >= 4 && YearsExperience <= 5)
 					{
 						RegistrationFee = 100;
 					}
-					else if (Exp >= 6 && Exp <= 9)
+					else if (YearsExperience >= 6 && YearsExperience <= 9)
 					{
 						RegistrationFee = 50;
 					}
